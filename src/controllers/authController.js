@@ -47,13 +47,18 @@ export const loginUser = async (req, res) => {
     throw createHttpError(401, 'Invalid credentials');
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+  const isPasswordValid = await bcrypt.compare(
+    password,
+    user.password,
+  );
 
   if (!isPasswordValid) {
     throw createHttpError(401, 'Invalid credentials');
   }
 
-  await Session.deleteMany({ userId: user._id });
+  await Session.deleteMany({
+    userId: user._id,
+  });
 
   const session = await createSession(user._id);
 
@@ -75,7 +80,9 @@ export const refreshUserSession = async (req, res) => {
   }
 
   if (session.refreshTokenValidUntil < new Date()) {
-    await Session.deleteOne({ _id: session._id });
+    await Session.deleteOne({
+      _id: session._id,
+    });
 
     res.clearCookie('sessionId');
     res.clearCookie('accessToken');
@@ -84,7 +91,9 @@ export const refreshUserSession = async (req, res) => {
     throw createHttpError(401, 'Session token expired');
   }
 
-  await Session.deleteOne({ _id: session._id });
+  await Session.deleteOne({
+    _id: session._id,
+  });
 
   const newSession = await createSession(session.userId);
 
@@ -99,7 +108,9 @@ export const logoutUser = async (req, res) => {
   const { sessionId } = req.cookies;
 
   if (sessionId) {
-    await Session.deleteOne({ _id: sessionId });
+    await Session.deleteOne({
+      _id: sessionId,
+    });
   }
 
   res.clearCookie('sessionId');
@@ -136,7 +147,11 @@ export const requestResetEmail = async (req, res) => {
     '../templates/reset-password-email.html',
   );
 
-  const templateSource = await fs.readFile(templatePath, 'utf-8');
+  const templateSource = await fs.readFile(
+    templatePath,
+    'utf-8',
+  );
+
   const template = handlebars.compile(templateSource);
 
   const link =
@@ -149,6 +164,7 @@ export const requestResetEmail = async (req, res) => {
 
   try {
     await sendEmail({
+      from: process.env.SMTP_FROM,
       to: user.email,
       subject: 'Reset your password',
       html,
@@ -171,9 +187,15 @@ export const resetPassword = async (req, res) => {
   let payload;
 
   try {
-    payload = jwt.verify(token, process.env.JWT_SECRET);
+    payload = jwt.verify(
+      token,
+      process.env.JWT_SECRET,
+    );
   } catch {
-    throw createHttpError(401, 'Invalid or expired token');
+    throw createHttpError(
+      401,
+      'Invalid or expired token',
+    );
   }
 
   const user = await User.findOne({
@@ -185,7 +207,10 @@ export const resetPassword = async (req, res) => {
     throw createHttpError(404, 'User not found');
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(
+    password,
+    10,
+  );
 
   user.password = hashedPassword;
 
